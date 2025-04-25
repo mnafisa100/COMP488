@@ -1,2 +1,3 @@
-# COMP488
-Game Design and Development
+# top down shooter game made with pygame
+
+
