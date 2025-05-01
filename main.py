@@ -1,3 +1,10 @@
+"""
+Whispers of the Undead - Main Game Setup and Resource Initialization
+This section includes screen setup, asset loading, game constants, 
+initial story events, sound effects, and custom utility classes 
+for core mechanics like blood essence and projectiles.
+"""
+
 import sys
 import pygame
 import math
@@ -6,30 +13,38 @@ import random
 
 pygame.init()
 
-
-
-# Screen setup
+# ------------------------
+# Screen and Clock Setup
+# ------------------------
 screen = pygame.display.set_mode((800, 700))
 pygame.display.set_caption("Whispers of The Undead")
 clock = pygame.time.Clock()
 
-# Load assets
+# ------------------------
+# Background Setup
+# ------------------------
+# Scaled pixel-art background for the vampire castle scene
 background = pygame.transform.scale(pygame.image.load("images/vampire_castle.png").convert(), (800, 700))
 
+import textwrap  # Used for formatting long story text
 
-import textwrap
+# ------------------------
+# Game Constants
+# ------------------------
+MAX_WAVES = 3             # Total number of waves before boss appears
+FINAL_BOSS_WAVE = 3       # Wave at which the final boss is triggered
 
-# Game constants
-MAX_WAVES = 3  # Game will end after this many waves
-FINAL_BOSS_WAVE = 3  # When the vampire lord appears
-
-# Add these at the beginning after other asset loading
+# ------------------------
+# Load In-Game Assets
+# ------------------------
 partner_image = pygame.transform.scale(pygame.image.load("images/vampire_partner.png").convert_alpha(), (70, 70))
 blood_essence_image = pygame.transform.scale(pygame.image.load("images/blood_essence.png").convert_alpha(), (30, 30))
 vampire_lord_image = pygame.transform.scale(pygame.image.load("images/vampire_boss.png").convert_alpha(), (120, 120))
 rescue_background = pygame.transform.scale(pygame.image.load("images/rescue_scene.png").convert(), (800, 700))
 
-# Condensed story events for 3 waves plus boss
+# ------------------------
+# Story Events by Wave
+# ------------------------
 story_events = {
     1: "You awaken from centuries of slumber in this ancient castle. Your beloved partner is missing.",
     2: "Whispers in the shadows confirm your fears - the castle's master has taken your partner captive.",
@@ -37,32 +52,42 @@ story_events = {
     "boss": "The ancient vampire lord stands between you and your partner. End this, once and for all."
 }
 
-# Sound effects
+# ------------------------
+# Audio: Sound Effects & Music
+# ------------------------
 attack_sound = pygame.mixer.Sound("vampire_attack.mp3")
 attack_sound.set_volume(0.2)
 
-# Background music
 background_music = pygame.mixer.Sound("dark_ambience.mp3")
 pygame.mixer.Channel(1).set_volume(0.5)
 
-# Menu music
 menu_sound = pygame.mixer.Sound("gothic_theme.mp3")
 pygame.mixer.Channel(0).set_volume(0.5)
 pygame.mixer.Channel(0).play(menu_sound, -1)
 
-# Game areas/rooms definitions
+# ------------------------
+# Room Layout Definition
+# ------------------------
 def create_room_layout():
-    # Define different rooms in the castle
+    """
+    Returns a dictionary defining rectangular boundaries of different rooms.
+    Used for collision detection and rendering logic.
+    """
     rooms = {
         "entrance": pygame.Rect(45, 110, 260, 440),
         "hallway": pygame.Rect(300, 200, 180, 80),
         "grand_hall": pygame.Rect(480, 110, 260, 440),
-        # Add more rooms as needed
     }
     return rooms
 
-# Blood essence system
+# ------------------------
+# Blood Essence System
+# ------------------------
 class BloodEssence:
+    """
+    Manages the player's blood essence resource used for healing or power-ups.
+    Includes gain, use, display, and healing methods.
+    """
     def __init__(self):
         self.current = 50
         self.maximum = 100
@@ -70,44 +95,74 @@ class BloodEssence:
         self.image = blood_essence_image
     
     def update(self):
-        # Blood essence no longer decreases over time
+        """
+        Placeholder for future blood essence behavior updates.
+        """
         pass
     
     def gain(self, amount):
+        """
+        Increases blood essence by specified amount without exceeding maximum.
+        """
         self.current = min(self.current + amount, self.maximum)
     
     def use(self, amount):
+        """
+        Uses specified amount of blood essence if available.
+        Returns True if successful, else False.
+        """
         if self.current >= amount:
             self.current -= amount
             return True
         return False
     
     def draw(self, screen):
-        # Draw blood essence icon and text
-        screen.blit(self.image, (screen.get_width() // 2 - 170, 40))
+        """
+        Renders the blood essence UI bar and label on the screen.
+        """
+        font = pygame.font.Font(None, 36)
         
-        text = self.font.render('Blood Essence:', True, (150, 0, 0))
-        screen.blit(text, (screen.get_width() // 2 - 130, 45))
+        essence_label = font.render("Blood Essence", True, (255, 215, 0))
+        essence_shadow = font.render("Blood Essence", True, (0, 0, 0))
         
-        # Draw the blood container
-        container_rect = pygame.Rect(screen.get_width() // 2, 45, 100, 15)
+        label_x = screen.get_width() // 2 - essence_label.get_width() // 2
+        image_x = label_x - self.image.get_width() - 5
+
+        # Draw icon and label text
+        screen.blit(essence_shadow, (label_x + 2, 17))  # Shadow drawn first
+        screen.blit(essence_label, (label_x, 15))       # Then the label itself
+
+        # Draw the essence container bar
+        container_width = 150
+        container_x = screen.get_width() // 2 - container_width // 2
+        container_rect = pygame.Rect(container_x, 45, container_width, 15)
         pygame.draw.rect(screen, (50, 0, 0), container_rect)
         
-        # Draw the current blood level
+        # Draw the filled portion based on current value
         if self.current > 0:
-            blood_rect = pygame.Rect(screen.get_width() // 2, 45, int(100 * (self.current / self.maximum)), 15)
-            pygame.draw.rect(screen, (180, 0, 0), blood_rect)
-            
+            blood_width = int(container_width * (self.current / self.maximum))
+            blood_rect = pygame.Rect(container_x, 45, blood_width, 15)
+            pygame.draw.rect(screen, (200, 0, 0), blood_rect)
+    
     def heal_player(self):
-        # New function to allow player to heal using blood essence
+        """
+        Heals the player by 1 health if they are not at max health and have enough essence.
+        Returns True if healing was successful.
+        """
         if self.current >= 30 and player.health < player.max_health:
             self.current -= 30
             player.health += 1
             return True
         return False
 
-# Add a Blood Projectile class for the boss
+# ------------------------
+# Blood Projectile (Boss Attack)
+# ------------------------
 class BloodProjectile(pygame.sprite.Sprite):
+    """
+    Represents a blood orb projectile fired by the boss.
+    Moves in a fixed direction and deals damage on contact.
+    """
     def __init__(self, x, y, direction):
         super().__init__()
         self.image = pygame.Surface((12, 12), pygame.SRCALPHA)
@@ -115,34 +170,42 @@ class BloodProjectile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(x, y))
         self.direction = direction
         self.speed = 6
-        self.lifetime = 120  # 2 seconds at 60 FPS
+        self.lifetime = 120  # Frames before it disappears
         
     def update(self):
-        # Move in the set direction
+        """
+        Moves the projectile and handles collisions and expiration.
+        """
+        # Move projectile
         self.rect.x += self.direction.x * self.speed
         self.rect.y += self.direction.y * self.speed
         
-        # Reduce lifetime
         self.lifetime -= 1
         if self.lifetime <= 0:
             self.kill()
-            
-        # Check for collisions with player
+
+        # Deal damage to player on contact
         if self.rect.colliderect(player.hitbox_rect) and not player.invincible:
             player.health -= 1
             player.invincible = True
-            player.invincibility_timer = 60  # 1 second at 60 FPS
+            player.invincibility_timer = 60  # Frames of invincibility
             self.kill()
-            
-        # Check if going out of bounds
+        
+        # Destroy projectile if it leaves bounds or hits invalid area
         if (self.rect.x < 0 or self.rect.x > 800 or 
             self.rect.y < 0 or self.rect.y > 700 or
             not is_within_playable_area(pygame.math.Vector2(self.rect.centerx, self.rect.centery))):
             self.kill()
 
 
-
+# ------------------------
+# BloodDrop Class
+# ------------------------
 class BloodDrop(pygame.sprite.Sprite):
+    """
+    Represents a blood essence collectible that drops from enemies or events.
+    Adds to the player's blood essence when collected.
+    """
     def __init__(self, x, y, amount):
         super().__init__()
         self.image = pygame.Surface((10, 10), pygame.SRCALPHA)
@@ -151,13 +214,19 @@ class BloodDrop(pygame.sprite.Sprite):
         self.amount = amount
         
     def update(self):
-        # Check if player collects this blood drop
+        # Check for collision with player and apply the essence bonus
         if pygame.sprite.collide_rect(self, player):
             player.blood_essence.gain(self.amount)
             self.kill()
 
-
+# ------------------------
+# Utility Functions for Room Boundaries
+# ------------------------
 def is_within_playable_area(position):
+    """
+    Checks if a given position (Vector2) is inside any defined playable room.
+    Returns True if position is within a room.
+    """
     rooms = create_room_layout()
     for room in rooms.values():
         if room.collidepoint(position):
@@ -165,6 +234,10 @@ def is_within_playable_area(position):
     return False
 
 def create_playable_area_grid(grid_size):
+    """
+    Creates a 2D grid representing walkable vs non-walkable areas.
+    Used for movement and environmental restrictions.
+    """
     grid = []
     for y in range(0, 700, grid_size):
         row = []
@@ -175,7 +248,14 @@ def create_playable_area_grid(grid_size):
         grid.append(row)
     return grid
 
+# ------------------------
+# Start Menu Screen
+# ------------------------
 def start_menu():
+    """
+    Displays the start menu screen with title and start prompt.
+    Waits for player to press SPACE to begin the game.
+    """
     menu_font = pygame.font.Font(None, 48)
     title_font = pygame.font.Font(None, 72)
     
@@ -193,70 +273,81 @@ def start_menu():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                # Stop the start menu sound when the space key is pressed
+                # Stop menu music and begin background music
                 pygame.mixer.Channel(0).stop()
                 pygame.mixer.Channel(1).play(background_music, loops=-1)
-                return  # Exit the start menu if the space key is pressed
+                return
 
+        # Draw background with dark overlay
         screen.blit(background, (0, 0))
-        # Add a semi-transparent overlay for better text visibility
         overlay = pygame.Surface((800, 700), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150))
         screen.blit(overlay, (0, 0))
         
+        # Draw menu UI text
         screen.blit(title_text, title_rect)
         screen.blit(menu_text, text_rect)
         pygame.display.update()
 
-# PLAYER
+# ------------------------
+# Player Class
+# ------------------------
 class Player(pygame.sprite.Sprite):
-    # INITIAL CONSTRUCTOR
+    """
+    Represents the main player character.
+    Handles movement, attacking, health, room transitions, and special abilities.
+    """
     def __init__(self):
         super().__init__()
         self.pos = pygame.math.Vector2(200, 500)
         self.image = pygame.transform.rotozoom(pygame.image.load('images/vampire_player.png').convert_alpha(), 0, 0.18)
         self.base_player_image = self.image
-        # TO CHECK HITBOX
+
+        # Collision hitbox
         self.hitbox_rect = self.base_player_image.get_rect(center=self.pos)
         self.hitbox_rect.height = 30
-        # TO DRAW PLAYER ON SCREEN
         self.rect = self.hitbox_rect.copy()
-        # attack properties
+
+        # Combat and health
         self.can_attack = True
         self.attack_cooldown = 0
-        self.health = 3  # Heart-based health system
+        self.health = 3
         self.max_health = 3
         self.invincible = False
         self.invincibility_timer = 0
+
+        # Movement and environment
         self.grid_size = 15
         self.playable_area_grid = create_playable_area_grid(self.grid_size)
-        # Vampire abilities
+        self.current_room = "entrance"
+        self.speed = 5
+
+        # Power-up system
         self.blood_essence = BloodEssence()
         self.has_dash = False
         self.has_mist_form = False
         self.has_bat_transform = False
-        self.current_room = "entrance"
-        self.speed = 5
 
-    # ROTATION
     def player_rotation(self):
-        # GET MOUSE COORDINATES
+        """
+        Rotates player sprite to face the mouse pointer.
+        """
         self.mouse_coords = pygame.mouse.get_pos()
-        self.x_change_mouse_player = (self.mouse_coords[0] - self.hitbox_rect.centerx)
-        self.y_change_mouse_player = (self.mouse_coords[1] - self.hitbox_rect.centery)
-        # ADDED 90 TO FIX CALCULATION FOR THE TIME BEING
+        self.x_change_mouse_player = self.mouse_coords[0] - self.hitbox_rect.centerx
+        self.y_change_mouse_player = self.mouse_coords[1] - self.hitbox_rect.centery
         self.angle = math.degrees(math.atan2(self.y_change_mouse_player, self.x_change_mouse_player)) + 90
         self.image = pygame.transform.rotate(self.base_player_image, -self.angle)
         self.rect = self.image.get_rect(center=self.hitbox_rect.center)
 
-    # HANDLE USER INPUTS
     def user_input(self):
+        """
+        Handles player input for movement, attacking, and abilities.
+        """
         self.velocity_x = 0
         self.velocity_y = 0
-
         keys = pygame.key.get_pressed()
 
-        # Movement
+        # Movement inputs
         if keys[pygame.K_w]:
             self.velocity_y = -self.speed
         if keys[pygame.K_s]:
@@ -265,161 +356,187 @@ class Player(pygame.sprite.Sprite):
             self.velocity_x = self.speed
         if keys[pygame.K_a]:
             self.velocity_x = -self.speed
-            
-        # MOVE DIAGONALLY / PYTHAGOREAN THEORY
+        
+        # Normalize diagonal speed
         if self.velocity_x != 0 and self.velocity_y != 0:
             self.velocity_y /= math.sqrt(2)
             self.velocity_x /= math.sqrt(2)
-            
-        # Attack - Only process mouse clicks for attacking, not for level progression
+
+        # Mouse click attack
         mouse_buttons = pygame.mouse.get_pressed()
-        if mouse_buttons[0]:  # Left mouse button
-            if self.can_attack:  # Remove blood essence requirement
+        if mouse_buttons[0]:
+            if self.can_attack:
                 self.can_attack = False
                 self.attack_cooldown = 20
                 self.perform_attack()
-                            
+
+        # Special abilities (if unlocked)
         if keys[pygame.K_q] and self.has_mist_form and self.blood_essence.use(20):
             self.activate_mist_form()
-            
         if keys[pygame.K_e] and self.has_bat_transform and self.blood_essence.use(30):
             self.transform_to_bat()
 
     def perform_attack(self):
-        # Calculate position slightly in front of the player based on the player's facing direction
+        """
+        Fires a basic projectile in the direction the player is facing.
+        """
         direction_vector = pygame.math.Vector2(math.cos(math.radians(self.angle - 90)), math.sin(math.radians(self.angle - 90)))
-        attack_pos = self.pos + direction_vector * 40  # 40 pixels in front of player
-        
+        attack_pos = self.pos + direction_vector * 40
         self.attack = VampireAttack(attack_pos.x, attack_pos.y, self.angle)
         attack_group.add(self.attack)
         all_sprites_group.add(self.attack)
-        # Play the attack sound
         attack_sound.play()
 
     def dash(self):
-        # Quick dash in the direction of movement
+        """
+        Dashes the player in the current movement direction.
+        """
         dash_distance = 3
         dash_vector = pygame.math.Vector2(self.velocity_x, self.velocity_y).normalize() * dash_distance * self.speed
         new_pos = self.pos + dash_vector
-        
         if is_within_playable_area(new_pos):
             self.pos = new_pos
-            
+
     def activate_mist_form(self):
-        # Temporary invincibility and ability to pass through enemies
+        """
+        Activates temporary invincibility using mist form.
+        """
         self.invincible = True
         self.invincibility_timer = 120  # 2 seconds at 60 FPS
-        
-    def transform_to_bat(self):
-        # Temporary speed boost and ability to reach higher places
-        self.speed = 10
-        pygame.time.set_timer(pygame.USEREVENT, 3000)  # Revert after 3 seconds
 
-    # CHANGE POSITION
+    def transform_to_bat(self):
+        """
+        Increases player speed temporarily when transformed into a bat.
+        """
+        self.speed = 10
+        pygame.time.set_timer(pygame.USEREVENT, 3000)  # Reverts speed after 3 seconds
+
     def move(self):
+        """
+        Updates player position based on input and room boundaries.
+        """
         new_pos = self.pos + pygame.math.Vector2(self.velocity_x, self.velocity_y)
         grid_x = int(new_pos.x / self.grid_size)
         grid_y = int(new_pos.y / self.grid_size)
 
-        # Check if the new position is within the playable area grid
         if 0 <= grid_x < len(self.playable_area_grid[0]) and 0 <= grid_y < len(self.playable_area_grid):
-            # Check if the new position is not an obstacle in the grid
             if not self.playable_area_grid[grid_y][grid_x]:
                 self.pos = new_pos
 
         self.hitbox_rect.center = self.pos
         self.rect.center = self.hitbox_rect.center
-        
-        # Check which room player is in
+
+        # Update current room based on new position
         rooms = create_room_layout()
         for room_name, room_rect in rooms.items():
             if room_rect.collidepoint(self.pos):
                 self.current_room = room_name
                 break
 
-    # DRAW HEALTH (HEARTS)
     def draw_health(self):
+        """
+        Draws player's heart-based health UI on screen.
+        """
         heart_spacing = 30
         for i in range(self.max_health):
             heart_pos = (20 + i * heart_spacing, 20)
             if i < self.health:
-                # Full heart
                 pygame.draw.circle(screen, (255, 0, 0), heart_pos, 10)
             else:
-                # Empty heart outline
                 pygame.draw.circle(screen, (255, 0, 0), heart_pos, 10, 2)
 
-    # UPDATE PLAYER STATE
     def update(self):
+        """
+        Handles per-frame updates for input, health, blood essence, and room status.
+        """
         self.user_input()
         self.move()
         self.player_rotation()
         self.blood_essence.update()
 
+        # Handle attack cooldown
         if self.attack_cooldown > 0:
             self.attack_cooldown -= 1
             if self.attack_cooldown <= 0:
                 self.can_attack = True
-                
+
+        # Handle temporary invincibility timer
         if self.invincible:
             self.invincibility_timer -= 1
             if self.invincibility_timer <= 0:
                 self.invincible = False
-                
-        # Draw health and blood essence
+
+        # UI rendering
         self.draw_health()
         self.blood_essence.draw(screen)
-        
-        # Display current room name
-        font = pygame.font.Font(None, 24)
-        room_text = font.render(f"Room: {self.current_room.replace('_', ' ').title()}", True, (200, 200, 200))
-        screen.blit(room_text, (screen.get_width() - 200, 20))
 
+        # Display current room on screen
+        font = pygame.font.Font(None, 36)
+        room_text_str = f"Room: {self.current_room.replace('_', ' ').title()}"
+        room_text = font.render(room_text_str, True, (255, 215, 0))
+        room_shadow = font.render(room_text_str, True, (0, 0, 0))
+        room_x = screen.get_width() - room_text.get_width() - 10
+        screen.blit(room_shadow, (room_x + 2, 62))
+        screen.blit(room_text, (room_x, 60))
 
+# ------------------------
+# VampireAttack Class
+# ------------------------
 class VampireAttack(pygame.sprite.Sprite):
+    """
+    Represents the player's melee or ranged attack (e.g., a slashing effect or projectile).
+    Moves in the direction the player is facing and damages enemies on contact.
+    """
     def __init__(self, x, y, attack_angle):
         super().__init__()
-        self.original_image = pygame.transform.rotozoom(pygame.image.load('images/vampire_attack.png').convert_alpha(), 0, 1.2)
+        self.original_image = pygame.transform.rotozoom(
+            pygame.image.load('images/vampire_attack.png').convert_alpha(), 0, 1.2
+        )
         self.attack_angle = attack_angle
-        
-        # Calculate the direction vector from angle
+
+        # Calculate direction vector from attack angle
         self.direction = pygame.math.Vector2(
             math.cos(math.radians(self.attack_angle - 90)), 
             math.sin(math.radians(self.attack_angle - 90))
         ).normalize()
-        
-        # Rotate the image right away
+
         self.image = pygame.transform.rotate(self.original_image, -self.attack_angle)
         self.rect = self.image.get_rect(center=(x, y))
         self.position = pygame.math.Vector2(x, y)
-        self.lifetime = 60  # Extended lifetime for projectile
+
+        self.lifetime = 60           # Time in frames the attack lasts
         self.spawn_time = pygame.time.get_ticks()
-        self.speed = 8  # Speed of the projectile
-        
+        self.speed = 8               # Speed of the attack's movement
+
     def update(self):
-        # Move the projectile in the direction
+        """
+        Moves the attack forward, checks collision with enemies, and removes it after lifespan or off-screen.
+        """
         self.position += self.direction * self.speed
         self.rect.center = (self.position.x, self.position.y)
-        
-        # Check if projectile hits a wall (goes out of screen or into non-playable area)
+
+        # Destroy if outside playable area
         if (self.position.x < 0 or self.position.x > 800 or 
             self.position.y < 0 or self.position.y > 700 or
             not is_within_playable_area(self.position)):
             self.kill()
-            
-        # Check for collisions with enemies
+
+        # Check collision with enemies
         enemy_hit = pygame.sprite.spritecollide(self, enemy_group, False)
         for enemy in enemy_hit:
-            # Only call take_damage on objects that have this method
             if hasattr(enemy, 'take_damage'):
-                # Decrease enemy health
                 enemy.take_damage(1)
-                # Kill the projectile after hitting an enemy
                 self.kill()
                 break
 
-
+# ------------------------
+# BaseEnemy Class
+# ------------------------
 class BaseEnemy(pygame.sprite.Sprite):
+    """
+    Base class for all enemy types.
+    Handles enemy AI states (hunt, dodge, recover), movement, health, pathfinding, and visual behavior.
+    """
     def __init__(self, image_path, health=2, speed=2):
         super().__init__()
         original_image = pygame.image.load(image_path).convert_alpha()
@@ -427,18 +544,22 @@ class BaseEnemy(pygame.sprite.Sprite):
         self.base_image = self.image.copy()
         self.rect = self.image.get_rect()
         self.hitbox_rect = self.base_image.get_rect(center=self.rect.center)
+
         self.grid_size = 15
         self.speed = speed
-        self.path = []
+        self.path = []                       # Path to player
         self.path_update_timer = 100
         self.spawned = False
         self.rotation_angle = 0
         self.health = health
-        self.state = "hunt"  # Default state
+        self.state = "hunt"                  # Enemy AI state
         self.state_timer = 0
-        self.blood_value = 10  # How much blood essence player gets from defeating this enemy
-        
+        self.blood_value = 10                # Amount of blood essence dropped on death
+
     def update_rotation(self, target_x, target_y):
+        """
+        Rotates enemy to face the player.
+        """
         angle = math.degrees(math.atan2(target_y - self.rect.centery, target_x - self.rect.centerx))
         self.rotation_angle = -angle - 90
         self.image = pygame.transform.rotate(self.base_image, self.rotation_angle)
@@ -446,39 +567,45 @@ class BaseEnemy(pygame.sprite.Sprite):
         self.hitbox_rect.center = self.rect.center
 
     def spawn_randomly(self, playable_area_grid, player_position, min_distance):
+        """
+        Spawns enemy at a random position within valid playable area 
+        but at least a minimum distance from the player.
+        """
         if not self.spawned:
             x, y = self.get_random_position(playable_area_grid, self.grid_size)
             distance_to_player = pygame.math.Vector2(x - player_position.x, y - player_position.y).length()
-
             if distance_to_player >= min_distance:
                 self.rect.topleft = (x, y)
                 self.spawned = True
 
     def get_random_position(self, playable_area_grid, grid_size):
+        """
+        Returns a random valid (non-obstacle) position from the grid.
+        """
         valid_positions = []
-
         for y in range(0, len(playable_area_grid) * grid_size, grid_size):
             for x in range(0, len(playable_area_grid[0]) * grid_size, grid_size):
                 grid_x = int(x / grid_size)
                 grid_y = int(y / grid_size)
-
                 if 0 <= grid_x < len(playable_area_grid[0]) and 0 <= grid_y < len(playable_area_grid):
                     if not playable_area_grid[grid_y][grid_x]:
                         valid_positions.append((x, y))
-
-        if valid_positions:
-            return random.choice(valid_positions)
-        else:
-            return 0, 0
+        return random.choice(valid_positions) if valid_positions else (0, 0)
 
     def get_grid_position(self):
+        """
+        Returns the enemy's current position in grid coordinates.
+        """
         return int(self.rect.x / self.grid_size), int(self.rect.y / self.grid_size)
 
-    # A* pathfinding algorithm
     def update_path_to_player(self, player_pos, playable_area_grid):
+        """
+        Updates the enemy's A* path to the player using heuristic search.
+        """
         start = self.get_grid_position()
         goal = (int(player_pos.x / self.grid_size), int(player_pos.y / self.grid_size))
         moves = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+
         open_set = []
         heapq.heappush(open_set, (0, start))
         cost_to_point = {start: 0}
@@ -486,9 +613,7 @@ class BaseEnemy(pygame.sprite.Sprite):
 
         while open_set:
             current_cost, current_point = heapq.heappop(open_set)
-
             if current_point == goal:
-                # Reconstruct the path
                 path = []
                 while current_point:
                     path.append(current_point)
@@ -498,129 +623,131 @@ class BaseEnemy(pygame.sprite.Sprite):
 
             for move in moves:
                 new_point = (current_point[0] + move[0], current_point[1] + move[1])
-
-                if (
-                        0 <= new_point[0] < len(playable_area_grid[0])
-                        and 0 <= new_point[1] < len(playable_area_grid)
-                        and not playable_area_grid[new_point[1]][new_point[0]]
-                ):
+                if (0 <= new_point[0] < len(playable_area_grid[0]) and
+                    0 <= new_point[1] < len(playable_area_grid) and
+                    not playable_area_grid[new_point[1]][new_point[0]]):
+                    
                     new_cost = cost_to_point[current_point] + 1
-                    if (
-                            new_point not in cost_to_point
-                            or new_cost < cost_to_point[new_point]
-                    ):
+                    if new_point not in cost_to_point or new_cost < cost_to_point[new_point]:
                         cost_to_point[new_point] = new_cost
                         priority = (new_cost + self.heuristic(new_point, goal), new_point)
                         heapq.heappush(open_set, priority)
                         came_from[new_point] = current_point
-
         self.path = []
 
     def heuristic(self, a, b):
-        return math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2)
+        """
+        Returns Euclidean distance heuristic between two grid points.
+        """
+        return math.sqrt((b[0] - a[0])**2 + (b[1] - a[1])**2)
 
     def move_towards_player_astar(self, playable_area_grid):
+        """
+        Moves enemy one step along the computed A* path towards the player.
+        """
         if self.path:
             for next_point in reversed(self.path):
                 target_x = next_point[0] * self.grid_size + self.grid_size / 2
                 target_y = next_point[1] * self.grid_size + self.grid_size / 2
-
                 direction = pygame.math.Vector2(target_x - self.rect.x, target_y - self.rect.y).normalize()
                 new_rect = self.rect.move(direction.x * self.speed, direction.y * self.speed)
 
                 grid_x = int(new_rect.x / self.grid_size)
                 grid_y = int(new_rect.y / self.grid_size)
 
-                if (
-                        0 <= grid_x < len(playable_area_grid[0])
-                        and 0 <= grid_y < len(playable_area_grid)
-                        and not playable_area_grid[grid_y][grid_x]
-                ):
+                if (0 <= grid_x < len(playable_area_grid[0]) and
+                    0 <= grid_y < len(playable_area_grid) and
+                    not playable_area_grid[grid_y][grid_x]):
                     self.rect = new_rect
                     break
-    
+
     def draw_health_bar(self):
-        health_ratio = self.health / 2  # Assuming max health is 2
+        """
+        Draws a dynamic health bar above the enemy based on current health.
+        """
+        health_ratio = self.health / 2
         bar_width = 40
         bar_height = 5
         health_bar_width = int(bar_width * health_ratio)
         health_bar_surface = pygame.Surface((bar_width, bar_height), pygame.SRCALPHA)
         pygame.draw.rect(health_bar_surface, (255, 255, 255), (0, 0, bar_width, bar_height))
-        
-        if health_ratio > 0.6:
-            color = (0, 255, 0)
-        elif health_ratio > 0.3:
-            color = (255, 255, 0)
-        else:
-            color = (255, 0, 0)
-            
+
+        # Change color based on remaining health
+        color = (0, 255, 0) if health_ratio > 0.6 else (255, 255, 0) if health_ratio > 0.3 else (255, 0, 0)
         pygame.draw.rect(health_bar_surface, color, (0, 0, health_bar_width, bar_height))
+
         health_bar_pos = (self.rect.centerx - bar_width // 2, self.rect.y - 10)
         screen.blit(health_bar_surface, health_bar_pos)
-    
+
     def take_damage(self, amount):
+        """
+        Reduces enemy health. On death, spawns a blood drop and removes the enemy.
+        """
         self.health -= amount
         if self.health <= 0:
-            # Spawn blood drop at enemy location instead of directly adding to player
             blood_drop = BloodDrop(self.rect.centerx, self.rect.centery, self.blood_value)
             pickup_group.add(blood_drop)
             all_sprites_group.add(blood_drop)
             self.kill()
         else:
-            # Removing this line or comment it out to ensure enemies continue hunting
-            # In dodge stste they would exit the screen 
-            # self.change_state("dodge" if random.random() > 0.5 else "recover")
-            
-            # Keep the enemy in "hunt" state after taking damage
-            self.state = "hunt"
-    
+            self.state = "hunt"  # Optional: enforce aggressive behavior after taking damage
+
     def change_state(self, new_state):
+        """
+        Changes the AI state and resets the timer for the state duration.
+        """
         self.state = new_state
-        self.state_timer = random.randint(60, 120)  # 1-2 seconds at 60 FPS
-    
+        self.state_timer = random.randint(60, 120)
+
     def update(self):
+        """
+        Main per-frame update loop for AI logic and interactions.
+        """
         if not self.spawned:
             self.spawn_randomly(player.playable_area_grid, player.pos, 150)
         else:
-            # State machine behavior
             if self.state == "hunt":
-                # Normal hunting behavior
                 if self.path_update_timer <= 0:
                     self.update_path_to_player(player.pos, player.playable_area_grid)
                     self.path_update_timer = 10
                 else:
                     self.path_update_timer -= 1
                 self.move_towards_player_astar(player.playable_area_grid)
-            
+
             elif self.state == "dodge":
                 # Move away from player
                 direction = pygame.math.Vector2(self.rect.centerx - player.pos.x, self.rect.centery - player.pos.y).normalize()
                 new_rect = self.rect.move(direction.x * self.speed * 1.5, direction.y * self.speed * 1.5)
                 self.rect = new_rect
-                
+
             elif self.state == "recover":
-                # Stand still and recover
-                pass
-                
-            # Update state timer
+                pass  # Could add regeneration or delay behavior here
+
+            # Timer-based state reset
             self.state_timer -= 1
             if self.state_timer <= 0:
-                self.change_state("hunt")  # Return to hunting state
+                self.change_state("hunt")
 
-            # Update rotation to face player
+            # Face the player
             self.update_rotation(player.pos.x, player.pos.y)
-            
-            # Draw health bar
+
+            # Display health bar
             self.draw_health_bar()
-            
-            # Check collision with player
+
+            # Deal contact damage to player
             if self.rect.colliderect(player.hitbox_rect) and not player.invincible:
                 player.health -= 1
                 player.invincible = True
                 player.invincibility_timer = 60  # 1 second at 60 FPS
 
-# Add a new VampireLord class for the final boss
+# ------------------------
+# VampireLord (Boss Enemy)
+# ------------------------
 class VampireLord(BaseEnemy):
+    """
+    Final boss enemy with multi-phase behaviors.
+    Changes attack strategy and visual appearance based on remaining health.
+    """
     def __init__(self):
         super().__init__("images/vampire_boss.png", health=6, speed=3)
         self.image = vampire_lord_image
@@ -632,260 +759,264 @@ class VampireLord(BaseEnemy):
         self.summon_cooldown = 0
         self.attack_cooldown = 0
         self.rect = self.image.get_rect()
-        self.active_minions = 0  # Track how many minions are active
-        self.max_minions = 3     # Maximum number of minions allowed
-        
+        self.active_minions = 0
+        self.max_minions = 3
+
     def update(self):
+        """
+        Controls boss behavior across three health-based phases.
+        Each phase has unique patterns (summoning, charging, teleporting).
+        """
         if not self.spawned:
-            # Boss always spawns in the grand hall center
-            self.rect.center = (610, 330)  # Center of grand hall coordinates
+            self.rect.center = (610, 330)
             self.spawned = True
         else:
-            # Update boss behavior based on health/phase
-            if self.health > 5:  # Phase 1
+            if self.health > 5:
                 self.phase = 1
                 self.phase_one_behavior()
-            elif self.health > 2:  # Phase 2
-                if self.phase == 1:  # Transition to phase 2
+            elif self.health > 2:
+                if self.phase == 1:
                     show_story_text("The vampire lord transforms into a giant bat!", 2000)
-                    # Change appearance for phase 2
                     self.base_image = pygame.transform.rotozoom(self.base_image, 0, 1.2)
                 self.phase = 2
                 self.phase_two_behavior()
-            else:  # Phase 3
-                if self.phase == 2:  # Transition to phase 3
+            else:
+                if self.phase == 2:
                     show_story_text("The vampire lord enters a blood rage!", 2000)
-                    # Change appearance for phase 3
                     red_overlay = pygame.Surface(self.base_image.get_size(), pygame.SRCALPHA)
                     red_overlay.fill((255, 0, 0, 100))
                     self.base_image.blit(red_overlay, (0, 0))
                 self.phase = 3
                 self.phase_three_behavior()
-            
-            # Always update rotation to face player
+
             self.update_rotation(player.pos.x, player.pos.y)
-            
-            # Draw health bar
             self.draw_health_bar()
-            
-            # Check collision with player
+
+            # Damage the player on contact
             if self.rect.colliderect(player.hitbox_rect) and not player.invincible:
                 player.health -= 1
                 player.invincible = True
-                player.invincibility_timer = 60  # 1 second at 60 FPS
-    
+                player.invincibility_timer = 60
+
     def phase_one_behavior(self):
-        # Keep distance and summon minions
-        # Move away from player if too close
-        distance_to_player = pygame.math.Vector2(self.rect.centerx - player.pos.x, 
-                                              self.rect.centery - player.pos.y).length()
-        
+        """
+        Phase 1: Maintains distance from player and summons Bats if under minion cap.
+        """
+        distance_to_player = pygame.math.Vector2(self.rect.centerx - player.pos.x,
+                                                 self.rect.centery - player.pos.y).length()
+
         if distance_to_player < 200:
-            direction = pygame.math.Vector2(self.rect.centerx - player.pos.x, 
-                                         self.rect.centery - player.pos.y).normalize()
+            direction = pygame.math.Vector2(self.rect.centerx - player.pos.x,
+                                            self.rect.centery - player.pos.y).normalize()
             new_pos = pygame.math.Vector2(self.rect.centerx, self.rect.centery) + direction * self.speed
             if is_within_playable_area(new_pos):
                 self.rect.center = new_pos
-                
-        # Count current minions (ghouls)
+
+        # Summon bats if allowed
         self.active_minions = len([e for e in enemy_group if isinstance(e, Ghoul)])
-        
-        # Summon minions occasionally, but only if below the maximum
         if self.summon_cooldown <= 0 and self.active_minions < self.max_minions:
             ghoul = Ghoul()
             ghoul.rect.center = self.rect.center
             ghoul.spawned = True
             enemy_group.add(ghoul)
             all_sprites_group.add(ghoul)
-            self.summon_cooldown = 180  # 3 seconds
+            self.summon_cooldown = 180  # 3 seconds cooldown
         else:
             self.summon_cooldown -= 1
-    
+
     def phase_two_behavior(self):
-        # Bat form - faster movement and swooping attacks
+        """
+        Phase 2: Increased speed, erratic movement, and aggressive dashes toward the player.
+        """
         self.speed = 4
-        
-        # Path planning
-        if random.random() < 0.02:  # Occasionally recalculate path
+
+        # Random pathing around player
+        if random.random() < 0.02:
             angle = random.randint(0, 360)
-            direction = pygame.math.Vector2(math.cos(math.radians(angle)), 
-                                         math.sin(math.radians(angle))).normalize()
+            direction = pygame.math.Vector2(math.cos(math.radians(angle)),
+                                            math.sin(math.radians(angle))).normalize()
             target_pos = pygame.math.Vector2(player.pos.x, player.pos.y) + direction * 200
-            
-            # If position is valid, move towards it
             if is_within_playable_area(target_pos):
-                # Calculate path to this position
                 self.update_path_to_player(target_pos, player.playable_area_grid)
-        
-        # Follow path if one exists
+
         if hasattr(self, 'path') and self.path:
             self.move_towards_player_astar(player.playable_area_grid)
-        
-        # Swoop attack when in line with player
+
+        # Charge attack
         if self.attack_cooldown <= 0:
-            # Direct charge toward player
             self.speed = 8
-            direction = pygame.math.Vector2(player.pos.x - self.rect.centerx, 
-                                         player.pos.y - self.rect.centery).normalize()
+            direction = pygame.math.Vector2(player.pos.x - self.rect.centerx,
+                                            player.pos.y - self.rect.centery).normalize()
             new_pos = pygame.math.Vector2(self.rect.centerx, self.rect.centery) + direction * self.speed
             if is_within_playable_area(new_pos):
                 self.rect.center = new_pos
-            self.attack_cooldown = 120  # 2 seconds
+            self.attack_cooldown = 120
         else:
             self.attack_cooldown -= 1
-            if self.attack_cooldown == 60:  # Reset speed halfway through cooldown
+            if self.attack_cooldown == 60:
                 self.speed = 4
-    
+
     def phase_three_behavior(self):
-        # Blood rage - aggressive teleportation and attacks
+        """
+        Phase 3: Fast teleportation around player to confuse and overwhelm.
+        """
         self.speed = 5
-        
-        # Don't summon minions in this phase - focus on direct attacks
-        
-        # Teleport frequently
+
         if self.teleport_cooldown <= 0:
-            # Teleport to random position near player
             angle = random.randint(0, 360)
-            direction = pygame.math.Vector2(math.cos(math.radians(angle)), 
-                                        math.sin(math.radians(angle))).normalize()
+            direction = pygame.math.Vector2(math.cos(math.radians(angle)),
+                                            math.sin(math.radians(angle))).normalize()
             teleport_pos = pygame.math.Vector2(player.pos.x, player.pos.y) + direction * 100
-            
             if is_within_playable_area(teleport_pos):
                 self.rect.center = teleport_pos
-            self.teleport_cooldown = 60  # 1 second
+            self.teleport_cooldown = 60  # 1 second cooldown
         else:
             self.teleport_cooldown -= 1
 
-
-# Bat Enemy
+# ------------------------
+# Bat (Minion Enemy)
+# ------------------------
 class Ghoul(BaseEnemy):
+    """
+    Small, fast enemy usually summoned by VampireLord.
+    Appears smaller and weaker, but swarms the player.
+    """
     def __init__(self):
         original_image_path = "images/ghoul.png"
         tiny_image = pygame.image.load(original_image_path).convert_alpha()
-        tiny_image = pygame.transform.scale(tiny_image, (20, 20))  # Set appropriate small size
+        tiny_image = pygame.transform.scale(tiny_image, (20, 20))
 
-        # Now pass the pre-scaled image to BaseEnemy
         super().__init__(original_image_path, health=2, speed=2)
         self.image = tiny_image
-        self.rect = self.image.get_rect(center=self.rect.center)  # Keep position centered
+        self.rect = self.image.get_rect(center=self.rect.center)
         self.blood_value = 10
 
-
-        
-
+# ------------------------
+# Vampire (Teleporting Enemy)
+# ------------------------
 class Vampire(BaseEnemy):
+    """
+    Medium-health enemy that teleports behind the player if within range.
+    Uses deceptive movement to evade direct attacks.
+    """
     def __init__(self):
         super().__init__("images/vampire_enemy.png", health=3, speed=3)
         self.blood_value = 20
         self.can_teleport = True
         self.teleport_cooldown = 0
-        
+
     def update(self):
         super().update()
-        
-        # Special teleport ability
+
         if self.can_teleport and self.teleport_cooldown <= 0:
-            distance_to_player = pygame.math.Vector2(self.rect.centerx - player.pos.x, self.rect.centery - player.pos.y).length()
-            if distance_to_player < 200 and distance_to_player > 100:
-                # Teleport behind player
+            distance_to_player = pygame.math.Vector2(self.rect.centerx - player.pos.x,
+                                                     self.rect.centery - player.pos.y).length()
+            if 100 < distance_to_player < 200:
                 behind_player = player.pos - pygame.math.Vector2(30, 0).rotate(player.angle)
                 if is_within_playable_area(behind_player):
                     self.rect.center = behind_player
                     self.teleport_cooldown = 180  # 3 seconds cooldown
-        
+
         if self.teleport_cooldown > 0:
             self.teleport_cooldown -= 1
 
-
+# ------------------------
+# Werewolf (Rage Mechanic)
+# ------------------------
 class Werewolf(BaseEnemy):
+    """
+    Strong enemy that enrages and becomes faster when low on health.
+    Visual transformation indicates state change.
+    """
     def __init__(self):
         super().__init__("images/warewolf.png", health=4, speed=4)
         self.blood_value = 30
         self.enraged = False
-        
+
     def update(self):
         super().update()
-        
-        # Enrage when health is low
+
+        # Rage state: Increase speed and scale up sprite
         if self.health <= 2 and not self.enraged:
             self.enraged = True
-            self.speed = 6  # Faster when enraged
-            self.base_image = pygame.transform.rotozoom(self.base_image, 0, 1.2)  # Slightly larger
-
-
-# Function to show boss introduction
+            self.speed = 6
+            self.base_image = pygame.transform.rotozoom(self.base_image, 0, 1.2)
+# ------------------------
+# Boss Introduction Function
+# ------------------------
 def show_boss_intro():
+    """
+    Displays a flashing red screen sequence and introduces the final boss.
+    """
     boss_intro_text = "The vampire lord appears! Defeat him to rescue your beloved!"
     
-    # Create dramatic effect with screen flash
+    # Flash red screen to signal boss appearance
     for _ in range(3):
-        # Flash screen red
         overlay = pygame.Surface((800, 700))
         overlay.fill((150, 0, 0))
         screen.blit(overlay, (0, 0))
         pygame.display.update()
         pygame.time.delay(100)
-        
-        # Return to normal
+
+        # Re-draw background and sprites to clear flash
         screen.blit(background, (0, 0))
         all_sprites_group.draw(screen)
         pygame.display.update()
         pygame.time.delay(100)
     
-    # Show boss text
+    # Show the final story line before the battle
     show_story_text(story_events["boss"], 3000)
 
-# Function to spawn enemies
+# ------------------------
+# Enemy Spawning Logic
+# ------------------------
 def spawn_enemies(wave_number):
+    """
+    Spawns enemies based on the current wave number.
+    Handles regular enemies for waves 1–3 and the Vampire Lord boss for wave 4.
+    Returns a sprite group containing all spawned enemies.
+    """
     enemies = pygame.sprite.Group()
-    
+
     if wave_number <= MAX_WAVES:
-        # Basic ghouls for all waves 
-        if wave_number == 3:
-            num_ghouls = 3  
-        else:
-            num_ghouls = wave_number * 2
-            
+        # Spawn bats
+        num_ghouls = 3 if wave_number == 3 else wave_number * 2
         for i in range(num_ghouls):
             enemy = Ghoul()
-            if wave_number == 3:  # Make ghouls weaker in wave 3
+            if wave_number == 3:
                 enemy.health = 1
                 enemy.speed = 1.5
-                enemy.blood_value = 15  # More blood essence
+                enemy.blood_value = 15
             enemy_group.add(enemy)
             all_sprites_group.add(enemy)
             enemies.add(enemy)
-        
-        # Add vampires from wave 2
+
+        # Spawn Vampires
         if wave_number >= 2:
-            if wave_number == 3:
-                num_vampires = 1  # Only 1 vampire in wave 3
-            else:
-                num_vampires = wave_number - 1
-                
+            num_vampires = 1 if wave_number == 3 else wave_number - 1
             for i in range(num_vampires):
                 enemy = Vampire()
-                if wave_number == 3:  # Make vampires weaker in wave 3
+                if wave_number == 3:
                     enemy.health = 2
                     enemy.speed = 2
-                    enemy.teleport_cooldown = 300  # Longer cooldown between teleports
-                    enemy.blood_value = 30  # More blood essence
+                    enemy.teleport_cooldown = 300
+                    enemy.blood_value = 30
                 enemy_group.add(enemy)
                 all_sprites_group.add(enemy)
                 enemies.add(enemy)
-                
-        # Add werewolves in wave 3 - make it weaker
+
+        # Spawn a Werewolf only in final regular wave
         if wave_number == 3:
             enemy = Werewolf()
-            enemy.health = 2 
-            enemy.speed = 3   
-            enemy.blood_value = 50  # More blood essence to prepare for boss
+            enemy.health = 2
+            enemy.speed = 3
+            enemy.blood_value = 50
             enemy_group.add(enemy)
             all_sprites_group.add(enemy)
             enemies.add(enemy)
-    
-    elif wave_number == MAX_WAVES + 1:  # Boss wave
-        # Spawn boss
+
+    elif wave_number == MAX_WAVES + 1:
+        # Final boss spawn
         show_boss_intro()
         boss = VampireLord()
         enemy_group.add(boss)
@@ -894,18 +1025,23 @@ def spawn_enemies(wave_number):
 
     return enemies
 
-
+# ------------------------
+# Upgrade Selection Menu
+# ------------------------
 def show_upgrades():
-    # Show 3 random upgrades for the player to choose from
+    """
+    Displays a choice of 1–3 random upgrades. Waits for player input to choose one.
+    Applies the selected upgrade to the player.
+    Returns the chosen upgrade effect as a string.
+    """
     upgrades = [
-       # {"name": "Dash Ability", "description": "Quick dash in direction of movement", "effect": "dash"},
         {"name": "Mist Form", "description": "Temporary invincibility", "effect": "mist"},
         {"name": "Bat Transform", "description": "Increased speed for a short time", "effect": "bat"},
         {"name": "Blood Capacity", "description": "Increase max blood essence", "effect": "blood"},
         {"name": "Health Up", "description": "Gain an extra heart", "effect": "health"}
     ]
-    
-    # Filter out upgrades player already has
+
+    # Filter out already-unlocked upgrades
     available_upgrades = []
     for upgrade in upgrades:
         if upgrade["effect"] == "dash" and not player.has_dash:
@@ -916,40 +1052,40 @@ def show_upgrades():
             available_upgrades.append(upgrade)
         elif upgrade["effect"] in ["blood", "health"]:
             available_upgrades.append(upgrade)
-    
-    # Choose 3 random upgrades
-    if len(available_upgrades) > 3:
-        chosen_upgrades = random.sample(available_upgrades, 3)
-    else:
-        chosen_upgrades = available_upgrades
-    
-    # Display the upgrades
+
+    # Pick 3 random upgrades
+    chosen_upgrades = random.sample(available_upgrades, 3) if len(available_upgrades) > 3 else available_upgrades
+
     font = pygame.font.Font(None, 36)
     small_font = pygame.font.Font(None, 24)
-    
+
+    # Draw semi-transparent overlay
     overlay = pygame.Surface((800, 700), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 200))
     screen.blit(overlay, (0, 0))
-    
+
+    # Title
     title_text = font.render("Choose an Upgrade", True, (200, 0, 0))
     screen.blit(title_text, (screen.get_width() // 2 - title_text.get_width() // 2, 100))
-    
+
+    # Draw upgrade cards
     for i, upgrade in enumerate(chosen_upgrades):
-        pygame.draw.rect(screen, (50, 0, 0), (150 + i*200, 200, 150, 200))
-        pygame.draw.rect(screen, (100, 0, 0), (150 + i*200, 200, 150, 200), 2)
-        
+        x = 150 + i * 200
+        pygame.draw.rect(screen, (50, 0, 0), (x, 200, 150, 200))
+        pygame.draw.rect(screen, (100, 0, 0), (x, 200, 150, 200), 2)
+
         name_text = font.render(upgrade["name"], True, (200, 200, 200))
-        screen.blit(name_text, (150 + i*200 + 75 - name_text.get_width() // 2, 220))
-        
+        screen.blit(name_text, (x + 75 - name_text.get_width() // 2, 220))
+
         desc_text = small_font.render(upgrade["description"], True, (200, 200, 200))
-        screen.blit(desc_text, (150 + i*200 + 75 - desc_text.get_width() // 2, 280))
-        
+        screen.blit(desc_text, (x + 75 - desc_text.get_width() // 2, 280))
+
         key_text = font.render(f"Press {i+1}", True, (200, 200, 200))
-        screen.blit(key_text, (150 + i*200 + 75 - key_text.get_width() // 2, 350))
-    
+        screen.blit(key_text, (x + 75 - key_text.get_width() // 2, 350))
+
     pygame.display.update()
-    
-    # Wait for player choice
+
+    # Wait for player selection
     waiting = True
     selection = None
     while waiting:
@@ -967,8 +1103,8 @@ def show_upgrades():
                 elif event.key == pygame.K_3 and len(chosen_upgrades) >= 3:
                     selection = chosen_upgrades[2]["effect"]
                     waiting = False
-    
-    # Apply the selected upgrade
+
+    # Apply selected upgrade to player
     if selection == "dash":
         player.has_dash = True
     elif selection == "mist":
@@ -981,49 +1117,51 @@ def show_upgrades():
     elif selection == "health":
         player.max_health += 1
         player.health += 1
-    
+
     return selection
-
-
+# ------------------------
+# Victory Screen
+# ------------------------
 def victory_screen():
-    # Switch to rescue background showing the reunion
+    """
+    Displays the final victory screen after defeating the Vampire Lord.
+    Shows the player reunited with their partner and offers a restart or quit.
+    """
     screen.blit(rescue_background, (0, 0))
-    
-    # Add a semi-transparent overlay
+
+    # Semi-transparent overlay
     overlay = pygame.Surface((800, 700), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 100))
     screen.blit(overlay, (0, 0))
-    
-    # Show victory message
+
     font = pygame.font.Font(None, 72)
     victory_text = font.render('You Have Prevailed!', True, (200, 0, 0))
     text_rect = victory_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 100))
     screen.blit(victory_text, text_rect)
-    
-    # Show reunion message
+
     message_font = pygame.font.Font(None, 36)
     message_text = message_font.render('You have rescued your beloved from the vampire lord.', True, (200, 200, 200))
     message_rect = message_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
     screen.blit(message_text, message_rect)
-    
-    # Draw player and partner together
+
+    # Player and partner sprites
     partner_rect = partner_image.get_rect(center=(screen.get_width() // 2 - 50, screen.get_height() // 2 + 100))
     player_rect = player.image.get_rect(center=(screen.get_width() // 2 + 50, screen.get_height() // 2 + 100))
     screen.blit(partner_image, partner_rect)
     screen.blit(player.image, player_rect)
-    
-    # Display retry message
+
+    # Retry instructions
     retry_font = pygame.font.Font(None, 30)
     retry_text = retry_font.render('Press Space to Play Again or Escape to Quit', True, (200, 200, 200))
     retry_rect = retry_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 200))
     screen.blit(retry_text, retry_rect)
-    
+
     pygame.display.update()
+
+    # Music switch
     pygame.mixer.Channel(1).stop()
-    # Play victory music if available, otherwise use menu music
     pygame.mixer.Channel(0).play(menu_sound, loops=-1)
-    
-    # Wait for player input
+
     waiting = True
     replay = False
     while waiting:
@@ -1037,38 +1175,44 @@ def victory_screen():
                     waiting = False
                 elif event.key == pygame.K_ESCAPE:
                     waiting = False
-    
+
     pygame.mixer.Channel(0).stop()
     if replay:
         pygame.mixer.Channel(1).play(background_music, loops=-1)
-    
-    return replay  # Return True to replay or False to quit
 
+    return replay
+
+# ------------------------
+# Game Over Screen
+# ------------------------
 def game_over_screen(wave_number):
+    """
+    Displays a game over screen when the player dies.
+    Offers retry option to restart the game from wave 1.
+    """
     screen.blit(background, (0, 0))
     overlay = pygame.Surface((800, 700), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 150))
     screen.blit(overlay, (0, 0))
 
-    # Display you died message
     font = pygame.font.Font(None, 72)
     game_over_text = font.render('The Darkness Claims You', True, (150, 0, 0))
-    
-    # Ensure text fits
+
+    # Shrink text if too wide
     if game_over_text.get_width() > screen.get_width() - 60:
         font = pygame.font.Font(None, 60)
         game_over_text = font.render('The Darkness Claims You', True, (150, 0, 0))
-    
+
     text_rect = game_over_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 80))
     screen.blit(game_over_text, text_rect)
 
-    # Display wave number
-    wave_font = pygame.font.Font(None, 36)
-    wave_text = wave_font.render(f'You survived {wave_number} waves', True, (200, 200, 200))
-    wave_rect = wave_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
-    screen.blit(wave_text, wave_rect)
+    # Display wave reached
+    wave_text = font.render(f'Wave: {current_wave}', True, (255, 215, 0))
+    wave_text_shadow = font.render(f'Wave: {current_wave}', True, (0, 0, 0))
+    screen.blit(wave_text_shadow, (12, 62))
+    screen.blit(wave_text, (10, 60))
 
-    # Display retry message
+    # Retry instructions
     retry_font = pygame.font.Font(None, 30)
     retry_text = retry_font.render('Press Space to Retry', True, (200, 200, 200))
     retry_rect = retry_text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 80))
@@ -1078,7 +1222,6 @@ def game_over_screen(wave_number):
     pygame.mixer.Channel(1).stop()
     pygame.mixer.Channel(0).play(menu_sound, loops=-1)
 
-    # Wait for the player to press space to retry
     space_pressed = False
     while not space_pressed:
         for event in pygame.event.get():
@@ -1088,140 +1231,129 @@ def game_over_screen(wave_number):
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 space_pressed = True
 
-    # Kill all enemies before retrying
+    # Clear enemies
     for enemy in enemy_group.sprites():
         enemy.kill()
 
     pygame.mixer.Channel(0).stop()
     pygame.mixer.Channel(1).play(background_music, loops=-1)
-    return True  # Retry the game
+    return True
 
-
+# ------------------------
+# Story Text Display
+# ------------------------
 def show_story_text(text, duration=3000):
+    """
+    Displays a multi-line text overlay with styled background and border.
+    Used for narrative moments.
+    """
     font = pygame.font.Font(None, 36)
-    
-    # Split text into multiple lines if too long
     words = text.split()
-    lines = []
-    current_line = []
-    
+    lines, current_line = [], []
+
     for word in words:
         test_line = ' '.join(current_line + [word])
-        test_surface = font.render(test_line, True, (200, 200, 200))
-        
-        # If adding this word makes the line too long, start a new line
-        if test_surface.get_width() > screen.get_width() - 100:
+        if font.render(test_line, True, (200, 200, 200)).get_width() > screen.get_width() - 100:
             lines.append(' '.join(current_line))
             current_line = [word]
         else:
             current_line.append(word)
-    
-    # Add the last line
     if current_line:
         lines.append(' '.join(current_line))
-    
-    # Create a surface tall enough for all lines
+
+    # Render text surfaces
+    text_surfaces = [font.render(line, True, (255, 255, 255)) for line in lines]
     line_height = font.get_linesize()
     text_height = line_height * len(lines)
-    
-    # Create surfaces for text and background
-    text_surfaces = []
-    max_width = 0
-    
-    for line in lines:
-        text_surface = font.render(line, True, (200, 200, 200))
-        text_surfaces.append(text_surface)
-        max_width = max(max_width, text_surface.get_width())
-    
-    # Create background surface
-    overlay = pygame.Surface((max_width + 40, text_height + 40), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 150))
-    
-    # Position at bottom of screen with padding
+    max_width = max(surf.get_width() for surf in text_surfaces)
+
+    # Create dark overlay with border
+    overlay = pygame.Surface((max_width + 60, text_height + 60), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 220))
+    pygame.draw.rect(overlay, (150, 0, 0), overlay.get_rect(), 2)
+
     overlay_y = screen.get_height() - text_height - 60
-    screen.blit(overlay, ((screen.get_width() - max_width - 40) // 2, overlay_y))
-    
-    # Draw each line
-    for i, text_surface in enumerate(text_surfaces):
-        text_rect = text_surface.get_rect(center=(screen.get_width() // 2, overlay_y + 20 + i * line_height))
-        screen.blit(text_surface, text_rect)
-    
+
+    # Show after a delay
+    screen.blit(background, (0, 0))
+    all_sprites_group.draw(screen)
     pygame.display.update()
-    
+    pygame.time.delay(1500)
+
+    screen.blit(overlay, ((screen.get_width() - max_width - 60) // 2, overlay_y))
+    for i, surf in enumerate(text_surfaces):
+        text_rect = surf.get_rect(center=(screen.get_width() // 2, overlay_y + 30 + i * line_height))
+        screen.blit(surf, text_rect)
+
+    pygame.display.update()
+
+    # Wait for duration or key press
     pygame.time.set_timer(pygame.USEREVENT + 1, duration)
     waiting = True
     while waiting:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.USEREVENT + 1:
-                waiting = False
-            elif event.type == pygame.KEYDOWN:
+            if event.type in (pygame.QUIT, pygame.KEYDOWN, pygame.USEREVENT + 1):
                 waiting = False
 
-
+# ------------------------
+# Area Transition Display
+# ------------------------
 def show_area_transition(area_name):
+    """
+    Displays a fade-in/fade-out text overlay indicating the new area entered.
+    """
     font = pygame.font.Font(None, 48)
     text_surface = font.render(f"Entering: {area_name}", True, (150, 0, 0))
-    
-    # Make sure text fits within screen width
     if text_surface.get_width() > screen.get_width() - 60:
-        # If too long, use smaller font
         font = pygame.font.Font(None, 36)
         text_surface = font.render(f"Entering: {area_name}", True, (150, 0, 0))
-    
+
     text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
-    
-    # Fade in
+
     for alpha in range(0, 255, 5):
         screen.blit(background, (0, 0))
         all_sprites_group.draw(screen)
-        
         overlay = pygame.Surface((800, 700), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, alpha))
         screen.blit(overlay, (0, 0))
-        
-        # Create copy of text_surface with new alpha
-        alpha_surface = text_surface.copy()
-        alpha_surface.set_alpha(alpha)
-        screen.blit(alpha_surface, text_rect)
-        pygame.display.update()
-        pygame.time.delay(10)
-    
-    pygame.time.delay(1000)
-    
-    # Fade out
-    for alpha in range(255, 0, -5):
-        screen.blit(background, (0, 0))
-        all_sprites_group.draw(screen)
-        
-        overlay = pygame.Surface((800, 700), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, alpha))
-        screen.blit(overlay, (0, 0))
-        
-        # Create copy of text_surface with new alpha
         alpha_surface = text_surface.copy()
         alpha_surface.set_alpha(alpha)
         screen.blit(alpha_surface, text_rect)
         pygame.display.update()
         pygame.time.delay(10)
 
-# Setup sprite groups
+    pygame.time.delay(1000)
+
+    for alpha in range(255, 0, -5):
+        screen.blit(background, (0, 0))
+        all_sprites_group.draw(screen)
+        overlay = pygame.Surface((800, 700), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, alpha))
+        screen.blit(overlay, (0, 0))
+        alpha_surface = text_surface.copy()
+        alpha_surface.set_alpha(alpha)
+        screen.blit(alpha_surface, text_rect)
+        pygame.display.update()
+        pygame.time.delay(10)
+
+# ------------------------
+# Main Game Loop
+# ------------------------
+# Sprite groups
 all_sprites_group = pygame.sprite.Group()
 attack_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
 pickup_group = pygame.sprite.Group()
 
-# Create player instance
+# Initialize player and first wave
 player = Player()
 all_sprites_group.add(player)
-
-# Game state
 current_wave = 1
 room_cleared = False
 enemies = spawn_enemies(current_wave)
 show_minimap = False
+
+# Narrative and room tracking
 story_events = {
     1: "You awaken from centuries of slumber in this ancient castle. Your beloved partner is missing.",
     2: "Whispers in the shadows confirm your fears - the castle's master has taken your partner captive.",
@@ -1237,59 +1369,55 @@ area_descriptions = {
     "grand_hall": "Grand Hall - Once a place of nobility, now corrupted"
 }
 
-# MAIN GAME LOOP
+# Game state flags
 running = True
 show_menu = True
 wave_transition_timer = 0
 waiting_for_next_wave = False
 
+# ------------------------
+# Game Loop
+# ------------------------
 while running:
     if show_menu:
         start_menu()
         show_menu = False
-        # Show initial story text
         show_story_text(story_events[1])
-    
-    # Fill screen with background
+
     screen.blit(background, (0, 0))
 
-    # Process events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_m:
-                show_minimap = not show_minimap
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+            show_minimap = not show_minimap
         elif event.type == pygame.USEREVENT:
-            # Event for bat transformation ending
-            player.speed = 5  # Reset speed after bat transformation
+            player.speed = 5  # Reset bat speed
 
-    # Display wave and room information
+    # Wave indicator
     font = pygame.font.Font(None, 36)
-    wave_text = font.render(f'Wave: {current_wave}', True, (200, 200, 200))
-    screen.blit(wave_text, (10, 60))  # Changed from (10, 10) to (10, 60)
-    
-    # Check if player entered a new area
+    wave_text = font.render(f'Wave: {current_wave}', True, (255, 215, 0))
+    wave_text_shadow = font.render(f'Wave: {current_wave}', True, (0, 0, 0))
+    screen.blit(wave_text_shadow, (12, 62))
+    screen.blit(wave_text, (10, 60))
+
+    # Room discovery logic
     if player.current_room not in discovered_areas:
         discovered_areas.add(player.current_room)
-        #show_area_transition(area_descriptions[player.current_room])
-    
+
     # Update attacks
     for attack in attack_group.sprites():
         attack.update()
-    
-    # Check if all enemies are killed - only process this if not already waiting for next wave
+
+    # Handle wave transitions and victory
     if len(enemy_group) == 0 and not room_cleared and not waiting_for_next_wave:
-        if current_wave > MAX_WAVES:  # If we've defeated the boss
-            # Show victory screen
+        if current_wave > MAX_WAVES:
             if victory_screen():
-                # Reset game for replay
+                # Reset state for replay
                 player.health = player.max_health
                 player.blood_essence.current = 50
                 player.blood_essence.maximum = 100
-                player.has_dash = False
-                player.has_mist_form = False
-                player.has_bat_transform = False
+                player.has_dash = player.has_mist_form = player.has_bat_transform = False
                 current_wave = 1
                 room_cleared = False
                 enemies = spawn_enemies(current_wave)
@@ -1299,96 +1427,67 @@ while running:
         else:
             room_cleared = True
             waiting_for_next_wave = True
-            wave_transition_timer = 60  # 1 second delay at 60 FPS
-    
-    # Process wave transition timer if waiting for next wave
+            wave_transition_timer = 60
+
+    # Begin next wave after delay
     if waiting_for_next_wave:
         wave_transition_timer -= 1
         if wave_transition_timer <= 0:
-            # Show story event if applicable
             if current_wave in story_events:
                 show_story_text(story_events[current_wave])
-            
-            # Check if we've reached max waves
+
             if current_wave == MAX_WAVES:
-                # Spawn boss after final wave
                 current_wave += 1
-                enemies = spawn_enemies(current_wave)  # This will spawn the boss
-                room_cleared = False
-                waiting_for_next_wave = False
-            elif current_wave < MAX_WAVES:
-                # Offer upgrades after each wave
+                enemies = spawn_enemies(current_wave)
+            else:
                 chosen_upgrade = show_upgrades()
                 if chosen_upgrade:
                     show_story_text(f"New ability gained: {chosen_upgrade.replace('_', ' ').title()}")
-                
-                # Prepare next wave
                 current_wave += 1
                 enemies = spawn_enemies(current_wave)
-                room_cleared = False
-                waiting_for_next_wave = False
-    
-    # Draw minimap if enabled
+
+            room_cleared = False
+            waiting_for_next_wave = False
+
+    # Show minimap if toggled
     if show_minimap:
         minimap_surface = pygame.Surface((200, 200), pygame.SRCALPHA)
         minimap_surface.fill((0, 0, 0, 150))
-        
-        # Draw room layout
         rooms = create_room_layout()
         for room_name, room_rect in rooms.items():
-            # Scale down room coordinates for minimap
-            mini_rect = pygame.Rect(
-                room_rect.x // 4 + 10, 
-                room_rect.y // 4 + 10, 
-                room_rect.width // 4, 
-                room_rect.height // 4
-            )
-            
-            # Color depends on if room is discovered
-            if room_name in discovered_areas:
-                pygame.draw.rect(minimap_surface, (100, 0, 0), mini_rect)
-            else:
-                pygame.draw.rect(minimap_surface, (50, 50, 50), mini_rect)
-            
-            # Highlight current room
+            mini_rect = pygame.Rect(room_rect.x // 4 + 10, room_rect.y // 4 + 10, room_rect.width // 4, room_rect.height // 4)
+            color = (100, 0, 0) if room_name in discovered_areas else (50, 50, 50)
+            pygame.draw.rect(minimap_surface, color, mini_rect)
             if room_name == player.current_room:
                 pygame.draw.rect(minimap_surface, (150, 0, 0), mini_rect, 2)
-        
-        # Draw player position on minimap
-        player_mini_pos = (player.pos.x // 4 + 10, player.pos.y // 4 + 10)
-        pygame.draw.circle(minimap_surface, (255, 255, 255), player_mini_pos, 3)
-        
-        # Draw enemies on minimap
+
+        # Player and enemy dots
+        pygame.draw.circle(minimap_surface, (255, 255, 255), (player.pos.x // 4 + 10, player.pos.y // 4 + 10), 3)
         for enemy in enemy_group:
-            enemy_mini_pos = (enemy.rect.centerx // 4 + 10, enemy.rect.centery // 4 + 10)
-            pygame.draw.circle(minimap_surface, (255, 0, 0), enemy_mini_pos, 2)
-        
+            pygame.draw.circle(minimap_surface, (255, 0, 0), (enemy.rect.centerx // 4 + 10, enemy.rect.centery // 4 + 10), 2)
+
         screen.blit(minimap_surface, (screen.get_width() - 210, screen.get_height() - 210))
-    
-    # Update and draw all sprites
+
     all_sprites_group.draw(screen)
     all_sprites_group.update()
 
     for pickup in pickup_group:
         pickup.update()
-    
-    # Check if player's health is zero or less
+
+    # Handle player death
     if player.health <= 0:
-        # Display game over screen
         if game_over_screen(current_wave):
-            # Reset game state
+            # Reset game state on retry
             player.health = player.max_health
             player.blood_essence.current = 50
             player.blood_essence.maximum = 100
-            player.has_dash = False
-            player.has_mist_form = False
-            player.has_bat_transform = False
+            player.has_dash = player.has_mist_form = player.has_bat_transform = False
             current_wave = 1
             room_cleared = False
             enemies = spawn_enemies(current_wave)
             discovered_areas = set(["entrance"])
         else:
             running = False
-    
+
     pygame.display.update()
-    clock.tick(60)  # 60 FPS
+    clock.tick(60)
