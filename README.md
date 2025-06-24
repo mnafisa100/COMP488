@@ -1,86 +1,172 @@
-Whispers of The Undead - Game Mechanics Overview
-Based on the code, "Whispers of The Undead" is a 2D vampire-themed action game with roguelike elements. Here's a comprehensive breakdown of the game mechanics:
-Core Gameplay
-Top-down perspective where you control a vampire character navigating through an ancient castle
-Mouse-based aiming - your character rotates to face your mouse cursor
-WASD movement for navigating around the castle rooms
-Wave-based combat against progressively harder enemies
-Room exploration system with different connected areas in the castle
-Player Abilities
-Basic Abilities
-Vampire Attack - Left mouse button fires a projectile in the direction you're facing
-Attack has a cooldown period before you can use it again
-Unlockable Abilities
-You gain these every 3 waves by selecting from random upgrade options:
-Dash Ability (Space key) - Quick burst of speed in your movement direction (costs 15 Blood Essence)
-Mist Form (Q key) - Temporary invincibility (costs 20 Blood Essence)
-Bat Transform (E key) - Increased movement speed for 3 seconds (costs 30 Blood Essence)
-Resource Systems
-Health System
-Heart-based health (starts with 3 hearts)
-Taking damage from enemies reduces hearts
-Temporary invincibility after being hit
-Game over when health reaches zero
-Blood Essence
-Resource for using special vampire abilities
-Maximum of 100 (can be upgraded)
-Collected by defeating enemies (they drop blood pickups)
-Different enemies yield different amounts of Blood Essence
-Enemy Types
-Bats
 
+# Whispers of The Undead
 
-Basic enemies with low health (2 HP)
-Slow movement speed
-Drop 10 Blood Essence
-Vampires
+**Whispers of The Undead** is a 2D vampire-themed action roguelike game built using **Python** and **Pygame**. Players control a vampire navigating an ancient castle, facing wave-based enemy combat, unlocking abilities, and uncovering a dark story.
 
+---
 
-Medium health (3 HP)
-Faster than Bats
-Special ability: can teleport behind the player
-Drop 20 Blood Essence
-Werewolves
+## 🎮 Gameplay Overview
 
+* **Top-down perspective** with WASD movement and mouse-based aiming
+* **Wave-based combat** with scaling difficulty and diverse enemy types
+* **Room exploration system** with multiple connected castle areas
+* **Unlockable vampire powers** and resource-based ability management
+* **Text-driven story** revealing secrets of the cursed castle
 
-High health (4 HP)
-Fastest enemy type
-Special ability: becomes enraged at low health (faster and larger)
-Drop 30 Blood Essence
-Enemy Behavior
-Enemies use A* pathfinding to navigate to the player
-They have a state machine with different behaviors:
-Hunt: Normal pursuit of player
-Dodge: Move away from player after being damaged
-Recover: Stand still temporarily after taking damage
-Wave System & Progression
-Game progresses through numbered waves
-Each wave spawns more enemies than the last
-Enemy types become more diverse in later waves
-Every 3 waves, you get to choose an upgrade
-Story events trigger at specific wave numbers
-Upgrades System
-When offered, you can choose from:
-Special abilities (Dash, Mist Form, Bat Transform)
-Increased Blood Essence capacity
-Additional health hearts
-Castle Environment
-Multiple interconnected rooms:
-Castle Entrance
-Connecting Hallway
-Grand Hall
-Rooms have different layouts
-Navigation is restricted to defined playable areas
-Minimap available (toggle with M key)
-UI Features
-Health display (hearts)
-Blood Essence meter
-Current wave counter
-Current room indicator
-Optional minimap (M key)
-Visible enemy health bars
-Story Elements
-Text-based story progression as you advance through waves
-Area descriptions when discovering new rooms
-Narrative about seeking a "blood relic" and confronting the castle's master
-This vampire-themed action game combines resource management, ability usage, and wave survival with exploration elements to create an engaging gameplay experience.
+---
+
+## 🕹️ Player Controls
+
+| Action         | Key / Input              |
+| -------------- | ------------------------ |
+| Move           | W / A / S / D            |
+| Aim & Attack   | Mouse (Left Click)       |
+| Dash           | Space (15 Blood Essence) |
+| Mist Form      | Q (20 Blood Essence)     |
+| Bat Transform  | E (30 Blood Essence)     |
+| Toggle Minimap | M                        |
+
+---
+
+## ⚔️ Player Abilities
+
+* **Basic Attack**: Fires a projectile toward the cursor; has a cooldown
+* **Dash**: Quick movement burst
+* **Mist Form**: Temporary invincibility
+* **Bat Transform**: Increases movement speed for 3 seconds
+
+*Abilities are unlocked every wave from randomized options.*
+
+---
+
+## ❤️ Resource Systems
+
+### Health System
+
+* Heart-based system (starts with 3 hearts)
+* Temporary invincibility after taking damage
+* Game over when health reaches 0
+
+### Blood Essence
+
+* Used to activate special abilities
+* Max capacity of 100 (upgradable)
+* Earned by defeating enemies (different enemies drop different amounts)
+
+---
+
+## 👹 Enemy Types
+
+| Enemy      | HP | Traits                                                                                     |
+| ---------- | -- | ------------------------------------------------------------------------------------------ |
+| Bats       | 2  | Basic, slow enemies; drop 10 Blood Essence                                                 |
+| Vampires   | 3  | Faster enemies; can teleport behind the player; drop 20 Blood Essence                      |
+| Werewolves | 4  | Fastest enemies; become enraged at low health (increase size/speed); drop 30 Blood Essence |
+
+---
+
+## 🧠 Enemy AI
+
+* **A\*** Pathfinding for navigation
+* **State Machine Behavior**:
+
+  * **Hunt**: Pursue the player
+  * **Dodge**: Evade after being hit
+  * **Recover**: Brief pause after damage
+
+---
+
+## 🌊 Wave & Upgrade System
+
+* Game progresses through **numbered waves**
+* Every wave increases in difficulty and enemy count
+* Every **3 waves**, choose one of:
+
+  * Unlock new ability
+  * Increase max Blood Essence
+  * Gain an extra health heart
+* Story elements and environmental changes triggered at specific waves
+
+---
+
+## 🏰 Environment
+
+* Castle includes:
+
+  * Castle Entrance
+  * Connecting Hallway
+  * Grand Hall
+* Each room has unique layouts and is restricted to defined playable zones
+* **Minimap available** (press `M`)
+
+---
+
+## 🧾 UI Features
+
+* Heart-based **Health Display**
+* **Blood Essence Meter**
+* **Wave Counter**
+* **Current Room Indicator**
+* Optional **Minimap**
+* **Enemy Health Bars** during combat
+
+---
+
+## 📖 Story Elements
+
+* Text-based story snippets revealed as you progress
+* Narrative centers on the search for a powerful **Blood Relic**
+* Face the **Castle Master** in a final confrontation
+
+---
+
+## 🛠️ Built With
+
+* **Python 3.x**
+* **Pygame**
+* Object-Oriented Programming principles
+* A\* Algorithm for AI pathfinding
+* Finite State Machines for enemy behavior
+
+---
+
+## 📸 Screenshots / Demo
+
+*To be added*
+
+---
+
+## 📂 Project Structure
+
+```
+/assets       # Sprites, audio, and other media
+/game         # Core game modules (player, enemies, levels, UI)
+main.py       # Entry point
+README.md     # You're here
+```
+
+---
+
+## 🚀 Getting Started
+
+1. Clone the repo
+
+   ```bash
+   git clone https://github.com/yourusername/whispers-of-the-undead.git
+   cd whispers-of-the-undead
+   ```
+
+2. Install dependencies
+
+   ```bash
+   pip install pygame
+   ```
+
+3. Run the game
+
+   ```bash
+   python main.py
+   ```
+
+---
+
