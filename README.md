@@ -152,8 +152,7 @@ README.md     # You're here
 1. Clone the repo
 
    ```bash
-   git clone https://github.com/yourusername/whispers-of-the-undead.git
-   cd whispers-of-the-undead
+   git clone https://github.com/mnafisa100/COMP488.git
    ```
 
 2. Install dependencies
