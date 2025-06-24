@@ -152,7 +152,7 @@ README.md     # You're here
 1. Clone the repo
 
    ```bash
-   git clone https://github.com/mnafisa100/COMP488.git
+   git clone https://github.com/mnafisa100/Whispers-of-the-Undead.git
    ```
 
 2. Install dependencies
